@@ -938,6 +938,7 @@ StmtModeExpr ::= <<structLiterals 'ON' <<stmtMode 'ON' Expr>> >> { elementType =
 StmtModeExprOff ::= <<stmtMode 'OFF' Expr>> { elementType = Expr }
 
 BlockExpr ::= OuterAttr* [ (unsafe | asyncBlock move? | try) &'{' ] LabelDecl? SimpleBlock {
+  implements = [ "org.rust.lang.core.psi.ext.RsLabeledExpression" ]
   elementTypeFactory = "org.rust.lang.core.stubs.StubImplementationsKt.factory"
 }
 
