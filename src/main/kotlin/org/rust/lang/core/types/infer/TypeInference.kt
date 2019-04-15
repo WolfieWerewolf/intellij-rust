@@ -647,7 +647,10 @@ class RsFnInferenceContext(
         when {
             blockExpr.isTry -> inferTryBlockExprType(blockExpr, expected)
             blockExpr.isAsync -> inferAsyncBlockExprType(blockExpr)
-            else -> blockExpr.block.inferType(expected)
+            else -> {
+                val type = blockExpr.block.inferType(expected)
+                inferLabeledExprType(blockExpr, type, true)
+            }
         }
 
     private fun inferTryBlockExprType(blockExpr: RsBlockExpr, expected: Ty? = null): Ty {
@@ -1347,7 +1350,11 @@ class RsFnInferenceContext(
 
     private fun inferLoopExprType(expr: RsLoopExpr): Ty {
         expr.block?.inferType()
-        val returningTypes = mutableListOf<Ty>()
+        return inferLabeledExprType(expr, TyNever, false)
+    }
+
+    private fun inferLabeledExprType(expr: RsLabeledExpression, baseType: Ty, matchOnlyByLabel: Boolean): Ty {
+        val returningTypes = mutableListOf(baseType)
         val label = expr.labelDecl?.name
 
         fun collectReturningTypes(element: PsiElement, matchOnlyByLabel: Boolean) {
@@ -1369,8 +1376,10 @@ class RsFnInferenceContext(
             }
         }
 
-        collectReturningTypes(expr, false)
-        return if (returningTypes.isEmpty()) TyNever else getMoreCompleteType(returningTypes)
+        if (label != null || !matchOnlyByLabel) {
+            collectReturningTypes(expr, matchOnlyByLabel)
+        }
+        return getMoreCompleteType(returningTypes)
     }
 
     private fun inferForExprType(expr: RsForExpr): Ty {
